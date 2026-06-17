@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Fleet - Drift Guard{% endblock %}
+
+{% block content %}
+<h1>Fleet View</h1>
+<p class="text-muted">Servers with parameter data.</p>
+
+<div class="d-flex justify-content-end mb-3">
+    <form action="/scan/curated" method="POST" class="d-inline">
+        <button type="submit" class="btn btn-warning">Run Curated Scan</button>
+    </form>
+</div>
+
+{% if report %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h2 class="h5 card-title">Servers</h2>
+                <p class="card-text h2">{{ report.total_servers }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h2 class="h5 card-title">Compliant</h2>
+                <p class="card-text h2">{{ report.compliant_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger mb-3">
+            <div class="card-body">
+                <h2 class="h5 card-title">Critical</h2>
+                <p class="card-text h2">{{ report.critical_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-dark mb-3">
+            <div class="card-body">
+                <h2 class="h5 card-title">Last Scan</h2>
+                <p class="card-text h4">{{ report.generated_at.strftime('%H:%M %m-%d') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">No curated scan results yet. Run a curated scan to see data.</div>
+{% endif %}
+
+<div class="card shadow">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+        <table id="curatedTable" class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Hostname</th>
+                    <th>Server Type</th>
+                    <th>OS</th>
+                    <th>Region</th>
+                    <th>Findings</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if servers %}
+                {% for s in servers %}
+                <tr>
+                    <td><a href="/server/{{ s.hostname }}">{{ s.hostname }}</a></td>
+                    <td>{{ s.server_type or '-' }}</td>
+                    <td>{{ s.os_family }} {{ s.os_version }}</td>
+                    <td>{{ s.region or '-' }}</td>
+                    <td>{{ s.findings_count }}</td>
+                    <td>
+                        {% if s.severity == 'CRITICAL' %}
+                            <span class="badge bg-danger">CRITICAL</span>
+                        {% elif s.severity == 'WARNING' %}
+                            <span class="badge bg-warning text-dark">WARNING</span>
+                        {% else %}
+                            <span class="badge bg-success">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No servers registered.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if servers %}
+<script>
+    $(document).ready(function() {
+        $('#curatedTable').DataTable({
+            "pageLength": 25,
+            "order": [[0, 'asc']]
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}
