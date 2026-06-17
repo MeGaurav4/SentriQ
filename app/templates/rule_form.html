@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{% if rule %}Edit{% else %}New{% endif %} Rule - SentriQ{% endblock %}
+
+{% block content %}
+<h1>{% if rule %}Edit Rule{% else %}New Rule{% endif %}</h1>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST" action="{% if rule %}/rules/{{ rule.id }}/edit{% else %}/rules/new{% endif %}">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="r_dc_name" class="form-label">Data Center</label>
+                            <input type="text" id="r_dc_name" name="dc_name" class="form-control"
+                                   value="{{ rule.dc_name if rule else '' }}" placeholder="e.g. DC-A" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="r_param_def" class="form-label">Parameter</label>
+                            <select id="r_param_def" name="parameter_definition_id" class="form-select" required>
+                                <option value="">-- Select --</option>
+                                {% for pd in param_defs %}
+                                <option value="{{ pd.id }}" {% if rule and rule.parameter_definition_id == pd.id %}selected{% endif %}>
+                                    {{ pd.display_name }} ({{ pd.name }}) - {{ pd.os_family }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="r_expected_value" class="form-label">Expected Value</label>
+                            <input type="text" id="r_expected_value" name="expected_value" class="form-control"
+                                   value="{{ rule.expected_value if rule else '' }}" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="/rules" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if rule %}Update Rule{% else %}Create Rule{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

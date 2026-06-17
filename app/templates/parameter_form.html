@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{% if parameter %}Edit{% else %}New{% endif %} Parameter - SentriQ{% endblock %}
+
+{% block content %}
+<h1>{% if parameter %}Edit Parameter{% else %}New Parameter{% endif %}</h1>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST" action="{% if parameter %}/parameters/{{ parameter.id }}/edit{% else %}/parameters/new{% endif %}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="param_name" class="form-label">Parameter Name</label>
+                            <input type="text" id="param_name" name="name" class="form-control"
+                                   value="{{ parameter.name if parameter else '' }}"
+                                   {% if parameter %}readonly{% endif %} required aria-describedby="param_name_help">
+                            <div class="form-text" id="param_name_help">Unique identifier (e.g., <code>ssh_port</code>)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="param_display_name" class="form-label">Display Name</label>
+                            <input type="text" id="param_display_name" name="display_name" class="form-control"
+                                   value="{{ parameter.display_name if parameter else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="param_os_family" class="form-label">OS Family</label>
+                            <select id="param_os_family" name="os_family" class="form-select" {% if parameter %}disabled{% endif %}>
+                                {% for os in os_choices %}
+                                <option value="{{ os }}" {% if parameter and parameter.os_family == os %}selected{% endif %}>
+                                    {{ os|capitalize }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if parameter %}
+                            <input type="hidden" name="os_family" value="{{ parameter.os_family }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="param_category" class="form-label">Category</label>
+                            <select id="param_category" name="category" class="form-select">
+                                {% for cat in ['system', 'security', 'network', 'service', 'application', 'runtime', 'registry', 'file'] %}
+                                <option value="{{ cat }}" {% if parameter and parameter.category == cat %}selected{% endif %}>
+                                    {{ cat|capitalize }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="param_data_type" class="form-label">Data Type</label>
+                            <select id="param_data_type" name="data_type" class="form-select">
+                                {% for dt in ['string', 'integer', 'boolean', 'list', 'json'] %}
+                                <option value="{{ dt }}" {% if parameter and parameter.data_type == dt %}selected{% endif %}>
+                                    {{ dt|capitalize }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="param_severity" class="form-label">Default Severity</label>
+                            <select id="param_severity" name="default_severity" class="form-select">
+                                <option value="warning" {% if parameter and parameter.default_severity == 'warning' %}selected{% endif %}>Warning</option>
+                                <option value="critical" {% if parameter and parameter.default_severity == 'critical' %}selected{% endif %}>Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="param_sort_order" class="form-label">Sort Order</label>
+                            <input type="number" id="param_sort_order" name="sort_order" class="form-control"
+                                   value="{{ parameter.sort_order if parameter else 0 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" id="param_is_active" name="is_active" class="form-check-input"
+                                       {% if parameter is none or parameter.is_active %}checked{% endif %}>
+                                <label for="param_is_active" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="param_help_text" class="form-label">Help Text</label>
+                        <textarea id="param_help_text" name="help_text" class="form-control" rows="3" aria-describedby="param_help_help">{{ parameter.help_text if parameter else '' }}</textarea>
+                        <div class="form-text" id="param_help_help">Description shown to users when configuring this parameter</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="/parameters" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if parameter %}Update Parameter{% else %}Create Parameter{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

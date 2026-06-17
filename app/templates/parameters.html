@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Parameter Definitions - SentriQ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2">Parameter Definitions</h1>
+    <div>
+        <a href="/parameters/new" class="btn btn-primary">+ New Parameter</a>
+        <form action="/parameters/delete-all" method="POST" class="d-inline" onsubmit="return confirm('Delete ALL parameter definitions? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">Delete All</button>
+        </form>
+    </div>
+</div>
+
+<div class="mb-3">
+    <div class="btn-group" role="group">
+        <a href="/parameters" class="btn btn-outline-secondary {% if not os_filter %}active{% endif %}">All</a>
+        <a href="/parameters?os_family=linux" class="btn btn-outline-secondary {% if os_filter == 'linux' %}active{% endif %}">Linux</a>
+        <a href="/parameters?os_family=windows" class="btn btn-outline-secondary {% if os_filter == 'windows' %}active{% endif %}">Windows</a>
+    </div>
+    <span class="ms-3 text-muted">{{ parameters|length }} parameters</span>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+        <table id="paramTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Display Name</th>
+                    <th>OS</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Severity</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for param in parameters %}
+                <tr>
+                    <td><code>{{ param.name }}</code></td>
+                    <td>{{ param.display_name }}</td>
+                    <td><span class="badge bg-primary">{{ param.os_family }}</span></td>
+                    <td>{{ param.category }}</td>
+                    <td>{{ param.data_type }}</td>
+                    <td>
+                        {% if param.default_severity == 'critical' %}
+                            <span class="badge bg-danger">critical</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">warning</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="/parameters/{{ param.id }}/toggle" method="POST" class="d-inline">
+                            {% if param.is_active %}
+                                <span class="badge bg-success">active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">inactive</span>
+                            {% endif %}
+                            <button type="submit" class="btn btn-sm btn-outline-primary ms-1">Toggle</button>
+                        </form>
+                    </td>
+                    <td>
+                        <a href="/parameters/{{ param.id }}/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form action="/parameters/{{ param.id }}/delete" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No parameter definitions yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if parameters %}
+<script>
+    $(document).ready(function() {
+        $('#paramTable').DataTable({
+            "pageLength": 50,
+            "order": [[0, 'asc']]
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

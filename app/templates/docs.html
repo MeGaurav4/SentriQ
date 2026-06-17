@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Docs - SentriQ{% endblock %}
+
+{% block content %}
+<h1>Documentation</h1>
+
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <div class="list-group" id="docList">
+            {% for doc in docs %}
+            <a href="#" class="list-group-item list-group-item-action{% if loop.first %} active{% endif %}"
+               data-doc="{{ doc.path }}" data-name="{{ doc.name }}">
+                {{ doc.title }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-body" id="docContent">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script>
+$(document).ready(function() {
+    function loadDoc(name) {
+        $("#docContent").html('<p class="text-muted">Loading...</p>');
+        $.get("/help/raw/" + name, function(md) {
+            $("#docContent").html(marked.parse(md));
+        }).fail(function() {
+            $("#docContent").html('<div class="alert alert-danger">Failed to load document.</div>');
+        });
+    }
+    $("#docList a").on("click", function(e) {
+        e.preventDefault();
+        $("#docList a").removeClass("active");
+        $(this).addClass("active");
+        loadDoc($(this).data("name"));
+    });
+    loadDoc("{{ docs[0].name }}");
+});
+</script>
+{% endblock %}

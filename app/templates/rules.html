@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Rules - SentriQ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h2 mb-0">Drift Rules</h1>
+        <p class="text-muted mb-0">DC-level overrides that replace baseline values during drift detection.</p>
+    </div>
+    <div>
+        <form action="/rules/delete-all" method="POST" class="d-inline me-2" onsubmit="return confirm('Delete ALL rules? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">Delete All</button>
+        </form>
+        <a href="/rules/new" class="btn btn-primary">+ New Rule</a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+        <table id="rulesTable" class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Data Center</th>
+                    <th>Parameter</th>
+                    <th>Expected Value</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if rules %}
+                {% for r in rules %}
+                <tr>
+                    <td><span class="badge bg-info text-dark">{{ r.dc_name }}</span></td>
+                    <td><code>{{ param_map[r.parameter_definition_id|string].display_name if r.parameter_definition_id|string in param_map else r.parameter_definition_id }}</code></td>
+                    <td><code>{{ r.expected_value[:80] }}{% if r.expected_value|length > 80 %}...{% endif %}</code></td>
+                    <td>
+                        <a href="/rules/{{ r.id }}/edit" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <form action="/rules/{{ r.id }}/delete" method="POST" class="d-inline" onsubmit="return confirm('Delete this rule?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No rules configured. Create rules to override baseline values per data center.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if rules %}
+<script>
+    $(document).ready(function() {
+        $('#rulesTable').DataTable({
+            "pageLength": 50,
+            "order": [[0, 'asc']]
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

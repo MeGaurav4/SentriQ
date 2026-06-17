@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}{% if baseline %}Edit{% else %}New{% endif %} Baseline - SentriQ{% endblock %}
+
+{% block content %}
+<h1>{% if baseline %}Edit Baseline{% else %}New Baseline Entry{% endif %}</h1>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST" action="{% if baseline %}/baseline/{{ baseline.id }}/edit{% else %}/baseline/new{% endif %}">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="bl_server_type" class="form-label">Server Type</label>
+                            <select id="bl_server_type" name="server_type" class="form-select" required>
+                                {% for st in server_types %}
+                                <option value="{{ st }}" {% if baseline and baseline.server_type == st %}selected{% endif %}>{{ st }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="bl_os_family" class="form-label">OS Family</label>
+                            <select id="bl_os_family" name="os_family" class="form-select" required>
+                                {% for os in os_choices %}
+                                <option value="{{ os }}" {% if baseline and baseline.os_family == os %}selected{% endif %}>{{ os|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="bl_os_version" class="form-label">OS Version</label>
+                            <input type="text" id="bl_os_version" name="os_version" class="form-control"
+                                   value="{{ baseline.os_version if baseline else '' }}" placeholder="e.g. RHEL 8.6">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="bl_region" class="form-label">Region</label>
+                            <input type="text" id="bl_region" name="region" class="form-control"
+                                   value="{{ baseline.region if baseline else '' }}" placeholder="e.g. us-east-1">
+                        </div>
+                        <div class="col-md-8">
+                            <label for="bl_param_def" class="form-label">Parameter Definition</label>
+                            <select id="bl_param_def" name="parameter_definition_id" class="form-select" required>
+                                <option value="">-- Select --</option>
+                                {% for pd in param_defs %}
+                                <option value="{{ pd.id }}" {% if baseline and baseline.parameter_definition_id == pd.id %}selected{% endif %}>
+                                    {{ pd.name }} ({{ pd.os_family }}) - {{ pd.display_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="bl_expected_value" class="form-label">Expected Value</label>
+                            <input type="text" id="bl_expected_value" name="expected_value" class="form-control"
+                                   value="{{ baseline.expected_value if baseline else '' }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" id="bl_is_critical" name="is_critical" class="form-check-input"
+                                       {% if baseline and baseline.is_critical %}checked{% endif %}>
+                                <label for="bl_is_critical" class="form-check-label">Critical</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="/baseline" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if baseline %}Update Baseline{% else %}Create Baseline{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

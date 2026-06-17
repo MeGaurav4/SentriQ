@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Import - SentriQ{% endblock %}
+
+{% block content %}
+<h1>Import</h1>
+
+<ul class="nav nav-tabs mb-4" id="importTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link{% if active_tab != 'baselines' %} active{% endif %}" id="params-tab"
+                data-bs-toggle="tab" data-bs-target="#params" type="button" role="tab"
+                aria-controls="params" aria-selected="{% if active_tab != 'baselines' %}true{% else %}false{% endif %}">
+            Parameter Import
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link{% if active_tab == 'baselines' %} active{% endif %}" id="baselines-tab"
+                data-bs-toggle="tab" data-bs-target="#baselines" type="button" role="tab"
+                aria-controls="baselines" aria-selected="{% if active_tab == 'baselines' %}true{% else %}false{% endif %}">
+            Baseline Import
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="importTabsContent">
+    {# === PARAMETER IMPORT TAB === #}
+    <div class="tab-pane fade{% if active_tab != 'baselines' %} show active{% endif %}" id="params" role="tabpanel"
+         aria-labelledby="params-tab">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Upload Server Parameters</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Upload an Excel file where columns are parameter names and rows are servers.</p>
+
+                        <form method="POST" action="/import/parameters" enctype="multipart/form-data" class="mb-3">
+                            <div class="mb-3">
+                                <label class="form-label">OS Family</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="os_family" value="linux" id="params-linux" checked required>
+                                        <label class="form-check-label" for="params-linux">Linux</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="os_family" value="windows" id="params-windows">
+                                        <label class="form-check-label" for="params-windows">Windows</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload Parameters</button>
+                        </form>
+
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h3 class="h6 mb-1">Expected Format</h3>
+                                <code class="small">Hostname | IP | Server_Type | CPU | Memory_GB | NTP_SERVERS | ...</code>
+                                <p class="text-muted small mb-0 mt-1">Each row = one server. Column headers must match parameter names (case-insensitive).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                {% if result and active_tab != 'baselines' %}
+                <div class="card shadow mb-4 border-{{ status }}">
+                    <div class="card-header bg-{{ status }} text-white">
+                        Import Result: {{ result.filename }}
+                    </div>
+                    <div class="card-body">
+                        {% if result.error %}
+                        <div class="alert alert-danger mb-0">{{ result.error }}</div>
+                        {% else %}
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Total rows:</strong> {{ result.total }}</li>
+                            <li><strong>Success (parameters):</strong> {{ result.success }}</li>
+                            <li><strong>Errors:</strong> {{ result.errors }}</li>
+                        </ul>
+                        {% if result.warnings %}
+                        <hr>
+                        <h3 class="h6">Warnings</h3>
+                        <ul class="list-unstyled mb-0 small">
+                            {% for w in result.warnings[:10] %}
+                            <li class="text-warning">{{ w }}</li>
+                            {% endfor %}
+                            {% if result.warnings|length > 10 %}
+                            <li class="text-muted">... and {{ result.warnings|length - 10 }} more</li>
+                            {% endif %}
+                        </ul>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# === BASELINE IMPORT TAB === #}
+    <div class="tab-pane fade{% if active_tab == 'baselines' %} show active{% endif %}" id="baselines" role="tabpanel"
+         aria-labelledby="baselines-tab">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Upload Baseline Configurations</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Upload an Excel file where columns are parameter names and rows are baseline definitions.</p>
+
+                        <form method="POST" action="/import/baselines" enctype="multipart/form-data" class="mb-3">
+                            <div class="mb-3">
+                                <label class="form-label">OS Family</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="os_family" value="linux" id="baselines-linux" checked required>
+                                        <label class="form-check-label" for="baselines-linux">Linux</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="os_family" value="windows" id="baselines-windows">
+                                        <label class="form-check-label" for="baselines-windows">Windows</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload Baselines</button>
+                        </form>
+
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h3 class="h6 mb-1">Expected Format</h3>
+                                <code class="small">server_type | os_family | CPU | Memory_GB | NTP_SERVERS | ...</code>
+                                <p class="text-muted small mb-0 mt-1">Each row defines expected values for a given (server_type, os_family) combination.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                {% if result and active_tab == 'baselines' %}
+                <div class="card shadow mb-4 border-{{ status }}">
+                    <div class="card-header bg-{{ status }} text-white">
+                        Import Result: {{ result.filename }}
+                    </div>
+                    <div class="card-body">
+                        {% if result.error %}
+                        <div class="alert alert-danger mb-0">{{ result.error }}</div>
+                        {% else %}
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Total rows:</strong> {{ result.total }}</li>
+                            <li><strong>Success (parameters):</strong> {{ result.success }}</li>
+                            <li><strong>Errors:</strong> {{ result.errors }}</li>
+                        </ul>
+                        {% if result.warnings %}
+                        <hr>
+                        <h3 class="h6">Warnings</h3>
+                        <ul class="list-unstyled mb-0 small">
+                            {% for w in result.warnings[:10] %}
+                            <li class="text-warning">{{ w }}</li>
+                            {% endfor %}
+                            {% if result.warnings|length > 10 %}
+                            <li class="text-muted">... and {{ result.warnings|length - 10 }} more</li>
+                            {% endif %}
+                        </ul>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Import History</h2>
+    </div>
+    <div class="card-body">
+        {% if history %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped" id="historyTable">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Date</th>
+                        <th>Rows</th>
+                        <th>Success</th>
+                        <th>Errors</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in history %}
+                    <tr>
+                        <td><code>{{ h.filename }}</code></td>
+                        <td>{{ h.imported_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ h.row_count }}</td>
+                        <td>{{ h.success_count }}</td>
+                        <td>{{ h.error_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No imports yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if history %}
+<script>
+$(document).ready(function() {
+    $('#historyTable').DataTable({
+        pageLength: 10,
+        order: [[1, 'desc']]
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

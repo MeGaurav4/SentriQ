@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Leader Board - SentriQ{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-3">Leader Board</h1>
+<p class="text-muted mb-4">Executive summary of configuration drift across the fleet.</p>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <label for="filterDc" class="form-label">Data Center</label>
+        <select id="filterDc" class="form-select">
+            <option value="">All DCs</option>
+            {% for dc in dc_list %}
+            <option value="{{ dc }}">{{ dc }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="filterType" class="form-label">Server Type</label>
+        <select id="filterType" class="form-select">
+            <option value="">All Types</option>
+            {% for t in type_list %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="filterOs" class="form-label">OS Family</label>
+        <select id="filterOs" class="form-select">
+            <option value="">All OS</option>
+            {% for os in os_list %}
+            <option value="{{ os }}">{{ os }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="filterParam" class="form-label">Parameter</label>
+        <select id="filterParam" class="form-select">
+            <option value="">All Parameters</option>
+        </select>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="badge bg-danger me-1" id="bannerCritical">0 Critical</span>
+        <span class="badge bg-warning text-dark me-1" id="bannerWarning">0 Warning</span>
+        <span class="badge bg-success me-1" id="bannerCompliant">0 Compliant</span>
+        <span class="badge bg-secondary" id="bannerTotal">0 affected servers</span>
+    </div>
+    <button class="btn btn-sm btn-outline-primary" onclick="scrollToServers()">View affected servers &darr;</button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center py-3">
+                <h6 class="card-title">Total Servers</h6>
+                <p class="h2 mb-0" id="kpiTotal">--</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white bg-danger" style="cursor:pointer" onclick="scrollToServers()" title="Click to view affected servers">
+            <div class="card-body text-center py-3">
+                <h6 class="card-title">Critical Findings</h6>
+                <p class="h2 mb-0" id="kpiCritical">--</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-dark bg-warning" style="cursor:pointer" onclick="scrollToServers()" title="Click to view affected servers">
+            <div class="card-body text-center py-3">
+                <h6 class="card-title">Warning Findings</h6>
+                <p class="h2 mb-0" id="kpiWarning">--</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center py-3">
+                <h6 class="card-title">Compliant Servers</h6>
+                <p class="h2 mb-0" id="kpiCompliant">--</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary" style="cursor:pointer" onclick="scrollToServers()" title="Click to view affected servers">
+            <div class="card-body text-center py-3">
+                <h6 class="card-title">Affected Servers</h6>
+                <p class="h2 mb-0" id="kpiAffected">--</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="driftBanner" class="alert alert-info alert-dismissible fade show py-2 mb-4 d-none" role="alert" style="cursor:pointer" onclick="scrollToServers()">
+    <span id="bannerMessage">Servers with drift detected. Click to view details.</span>
+    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5 class="card-title">Compliance Breakdown</h5>
+                <p class="text-muted small mb-2">Server-level compliance status</p>
+                <canvas id="complianceChart" height="130"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title">Top Drifted Parameters</h5>
+                <p class="text-muted small mb-2">Parameters with most critical/warning drift</p>
+                <canvas id="topParamsChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5 class="card-title">Drift Trend (All Reports)</h5>
+                <p class="text-muted small mb-2">Critical, warning and compliant counts over time</p>
+                <canvas id="trendChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title">By Data Center</h5>
+                <p class="text-muted small mb-2">Drift distribution across DCs</p>
+                <canvas id="byDcChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title">By Server Type</h5>
+                <p class="text-muted small mb-2">Drift by server role</p>
+                <canvas id="byTypeChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title">By OS Family</h5>
+                <p class="text-muted small mb-2">Drift by operating system</p>
+                <canvas id="byOsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4" id="serverListSection" style="display:none">
+    <div class="col-md-12">
+        <div class="card shadow border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span>Affected Servers <small class="fw-normal">(matching current filters)</small></span>
+                <span class="badge bg-light text-primary" id="serverCountBadge">0</span>
+            </div>
+            <div class="card-body p-2">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" id="serverTable">
+                        <thead>
+                            <tr>
+                                <th>Hostname</th>
+                                <th>Type</th>
+                                <th>OS</th>
+                                <th>DC</th>
+                                <th>Drift</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serverTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script>
+const COLORS = {
+    critical: '#e74c3c',
+    warning: '#f39c12',
+    compliant: '#27ae60',
+    info: '#3498db',
+    grid: '#e8e8e8',
+    text: '#555',
+};
+
+Chart.defaults.color = COLORS.text;
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+Chart.register(ChartDataLabels);
+
+const datalabelsOpts = {
+    color: '#fff',
+    font: { weight: 'bold', size: 11 },
+    formatter: (val, ctx) => {
+        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+        if (total === 0) return '';
+        const pct = Math.round(val / total * 100);
+        return val > 0 ? val + ' (' + pct + '%)' : '';
+    },
+};
+
+const tooltipOpts = {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    titleFont: { weight: 'bold' },
+    cornerRadius: 4,
+    padding: 8,
+};
+
+const legendOpts = {
+    position: 'bottom',
+    labels: {
+        padding: 16,
+        usePointStyle: true,
+        pointStyle: 'circle',
+    },
+};
+
+let charts = {};
+let currentData = null;
+
+function buildUrl() {
+    const dc = document.getElementById('filterDc').value;
+    const st = document.getElementById('filterType').value;
+    const os = document.getElementById('filterOs').value;
+    const pk = document.getElementById('filterParam').value;
+    const params = new URLSearchParams();
+    if (dc) params.set('dc', dc);
+    if (st) params.set('server_type', st);
+    if (os) params.set('os_family', os);
+    if (pk) params.set('parameter_key', pk);
+    return '/api/leaderboard/stats?' + params.toString();
+}
+
+function getActiveFilters() {
+    return {
+        dc: document.getElementById('filterDc').value,
+        st: document.getElementById('filterType').value,
+        os: document.getElementById('filterOs').value,
+        pk: document.getElementById('filterParam').value,
+    };
+}
+
+function setFilter(id, value) {
+    const el = document.getElementById(id);
+    for (let i = 0; i < el.options.length; i++) {
+        if (el.options[i].value === value) {
+            el.selectedIndex = i;
+            break;
+        }
+    }
+}
+
+function destroyCharts() {
+    Object.values(charts).forEach(c => { if (c) c.destroy(); });
+    charts = {};
+}
+
+function scrollToServers() {
+    const el = document.getElementById('serverListSection');
+    if (el && el.style.display !== 'none') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function renderServerTable(servers) {
+    const section = document.getElementById('serverListSection');
+    const tbody = document.getElementById('serverTableBody');
+    const badge = document.getElementById('serverCountBadge');
+
+    if (!servers || servers.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    badge.textContent = servers.length;
+    tbody.innerHTML = servers.map(s => {
+        const statusClass = s.severity === 'CRITICAL' ? 'danger' : s.severity === 'WARNING' ? 'warning text-dark' : 'success';
+        return `<tr>
+            <td><a href="/server/${s.hostname}">${s.hostname}</a></td>
+            <td>${s.type || '-'}</td>
+            <td>${s.os || '-'}</td>
+            <td>${s.dc || '-'}</td>
+            <td>${s.drift_count}</td>
+            <td><span class="badge bg-${statusClass}">${s.severity}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function reloadCharts() {
+    destroyCharts();
+    fetch(buildUrl())
+        .then(r => r.json())
+        .then(d => {
+            currentData = d;
+            const affectedCount = (d.compliance.servers_critical || 0) + (d.compliance.servers_warning || 0);
+            document.getElementById('kpiTotal').textContent = d.compliance.server_count || 0;
+            document.getElementById('kpiCritical').textContent = d.compliance.critical || 0;
+            document.getElementById('kpiWarning').textContent = d.compliance.warning || 0;
+            document.getElementById('kpiCompliant').textContent = d.compliance.servers_clean || 0;
+            document.getElementById('kpiAffected').textContent = affectedCount;
+
+            document.getElementById('bannerCritical').textContent = (d.compliance.servers_critical || 0) + ' Critical';
+            document.getElementById('bannerWarning').textContent = (d.compliance.servers_warning || 0) + ' Warning';
+            document.getElementById('bannerCompliant').textContent = (d.compliance.servers_clean || 0) + ' Compliant';
+            document.getElementById('bannerTotal').textContent = affectedCount + ' affected servers';
+
+            const banner = document.getElementById('driftBanner');
+            const numCrit = d.compliance.servers_critical || 0;
+            const numWarn = d.compliance.servers_warning || 0;
+            if (affectedCount > 0) {
+                banner.classList.remove('d-none');
+                let msg = affectedCount + ' server' + (affectedCount > 1 ? 's have' : ' has') + ' drift';
+                if (numCrit > 0) msg += ' (' + numCrit + ' critical)';
+                document.getElementById('bannerMessage').textContent = msg + '. Click to view details.';
+            } else {
+                banner.classList.add('d-none');
+            }
+
+            const paramSelect = document.getElementById('filterParam');
+            if (paramSelect.options.length <= 1 && d.params_list && d.params_list.length > 0) {
+                d.params_list.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k;
+                    opt.textContent = k;
+                    paramSelect.appendChild(opt);
+                });
+            }
+
+            charts.compliance = new Chart(document.getElementById('complianceChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Critical', 'Warning', 'Compliant'],
+                    datasets: [{
+                        data: [
+                            d.compliance.servers_critical || 0,
+                            d.compliance.servers_warning || 0,
+                            d.compliance.servers_clean || 0,
+                        ],
+                        backgroundColor: [COLORS.critical, COLORS.warning, COLORS.compliant],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    onClick: (e, elements) => {
+                        if (elements.length === 0) return;
+                        const idx = elements[0].index;
+                        const labels = ['Critical', 'Warning', 'Compliant'];
+                        const label = labels[idx];
+                        if (label === 'Critical') {
+                            document.getElementById('filterParam').value = '';
+                            reloadCharts();
+                        } else if (label === 'Warning') {
+                            document.getElementById('filterParam').value = '';
+                            reloadCharts();
+                        }
+                    },
+                    plugins: {
+                        legend: legendOpts,
+                        tooltip: {
+                            ...tooltipOpts,
+                            callbacks: {
+                                label: function(ctx) {
+                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const val = ctx.parsed;
+                                    const pct = total > 0 ? Math.round(val / total * 100) : 0;
+                                    return ctx.label + ': ' + val + ' (' + pct + '%)';
+                                }
+                            }
+                        },
+                        datalabels: {
+                            ...datalabelsOpts,
+                            color: '#fff',
+                            font: { weight: 'bold', size: 13 },
+                        },
+                    },
+                },
+            });
+
+            charts.topParams = new Chart(document.getElementById('topParamsChart'), {
+                type: 'bar',
+                data: {
+                    labels: d.top_params.map(p => p._key),
+                    datasets: [
+                        {
+                            label: 'Critical',
+                            data: d.top_params.map(p => p.critical || 0),
+                            backgroundColor: COLORS.critical,
+                            borderRadius: 2,
+                        },
+                        {
+                            label: 'Warning',
+                            data: d.top_params.map(p => p.warning || 0),
+                            backgroundColor: COLORS.warning,
+                            borderRadius: 2,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    onClick: (e, elements) => {
+                        if (elements.length === 0) return;
+                        const idx = elements[0].datasetIndex === undefined ? elements[0].index : elements[0].index;
+                        const paramKey = d.top_params[idx]._key;
+                        setFilter('filterParam', paramKey);
+                        reloadCharts();
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: COLORS.grid } },
+                    },
+                    plugins: {
+                        legend: legendOpts,
+                        tooltip: tooltipOpts,
+                        datalabels: {
+                            color: function(ctx) {
+                                return ctx.datasetIndex === 1 ? '#333' : '#fff';
+                            },
+                            font: { weight: 'bold', size: 10 },
+                            anchor: 'center',
+                            align: 'center',
+                            formatter: (val) => val > 0 ? val : '',
+                        },
+                    },
+                },
+            });
+
+            charts.trend = new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: d.trend.map(t => t.date),
+                    datasets: [
+                        {
+                            label: 'Critical',
+                            data: d.trend.map(t => t.critical),
+                            borderColor: COLORS.critical,
+                            backgroundColor: COLORS.critical + '22',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                        },
+                        {
+                            label: 'Warning',
+                            data: d.trend.map(t => t.warning),
+                            borderColor: COLORS.warning,
+                            backgroundColor: COLORS.warning + '22',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                        },
+                        {
+                            label: 'Compliant',
+                            data: d.trend.map(t => t.compliant),
+                            borderColor: COLORS.compliant,
+                            backgroundColor: COLORS.compliant + '22',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: legendOpts,
+                        tooltip: tooltipOpts,
+                        datalabels: { display: false },
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: COLORS.grid } },
+                        x: { grid: { display: false } },
+                    },
+                    interaction: { mode: 'index', intersect: false },
+                },
+            });
+
+            const barDatalabels = {
+                color: '#fff',
+                font: { weight: 'bold', size: 10 },
+                anchor: 'end',
+                align: 'end',
+                formatter: (val) => val > 0 ? val : '',
+            };
+
+            function makeOnClickChart(filterId, keyFn) {
+                return (e, elements) => {
+                    if (elements.length === 0) return;
+                    const idx = elements[0].index;
+                    const val = keyFn(idx);
+                    if (val && val !== 'Unset') {
+                        setFilter(filterId, val);
+                        reloadCharts();
+                    }
+                };
+            }
+
+            charts.byDc = new Chart(document.getElementById('byDcChart'), {
+                type: 'bar',
+                data: {
+                    labels: d.by_dc.map(r => r.dc),
+                    datasets: [
+                        { label: 'Critical', data: d.by_dc.map(r => r.critical), backgroundColor: COLORS.critical, borderRadius: 2 },
+                        { label: 'Warning', data: d.by_dc.map(r => r.warning), backgroundColor: COLORS.warning, borderRadius: 2 },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    onClick: makeOnClickChart('filterDc', idx => d.by_dc[idx].dc),
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: COLORS.grid } },
+                    },
+                    plugins: {
+                        legend: legendOpts,
+                        tooltip: tooltipOpts,
+                        datalabels: barDatalabels,
+                    },
+                },
+            });
+
+            charts.byType = new Chart(document.getElementById('byTypeChart'), {
+                type: 'bar',
+                data: {
+                    labels: d.by_type.map(r => r.type),
+                    datasets: [
+                        { label: 'Critical', data: d.by_type.map(r => r.critical), backgroundColor: COLORS.critical, borderRadius: 2 },
+                        { label: 'Warning', data: d.by_type.map(r => r.warning), backgroundColor: COLORS.warning, borderRadius: 2 },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    onClick: makeOnClickChart('filterType', idx => d.by_type[idx].type),
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: COLORS.grid } },
+                    },
+                    plugins: {
+                        legend: legendOpts,
+                        tooltip: tooltipOpts,
+                        datalabels: barDatalabels,
+                    },
+                },
+            });
+
+            charts.byOs = new Chart(document.getElementById('byOsChart'), {
+                type: 'bar',
+                data: {
+                    labels: d.by_os.map(r => r.os),
+                    datasets: [
+                        { label: 'Critical', data: d.by_os.map(r => r.critical), backgroundColor: COLORS.critical, borderRadius: 2 },
+                        { label: 'Warning', data: d.by_os.map(r => r.warning), backgroundColor: COLORS.warning, borderRadius: 2 },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    onClick: makeOnClickChart('filterOs', idx => d.by_os[idx].os),
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: COLORS.grid } },
+                    },
+                    plugins: {
+                        legend: legendOpts,
+                        tooltip: tooltipOpts,
+                        datalabels: barDatalabels,
+                    },
+                },
+            });
+
+            renderServerTable(d.servers);
+        })
+        .catch(e => console.error('Failed to load leaderboard data', e));
+}
+
+function applyFilterOnChange(id) {
+    document.getElementById(id).addEventListener('change', reloadCharts);
+}
+
+['filterDc', 'filterType', 'filterOs', 'filterParam'].forEach(applyFilterOnChange);
+
+$(document).ready(function() {
+    reloadCharts();
+});
+</script>
+{% endblock %}
