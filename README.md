@@ -1,14 +1,5 @@
 # SentriQ
-> Configuration drift detection for server fleets
-
-```
-   ____            _    ____
-  / ___|  ___ _ __| |_ / ___|  ___ _ __
-  \___ \ / _ \ '__| __|\___ \ / _ \ '_ \
-   ___) |  __/ |  | |_  ___) |  __/ | | |
-  |____/ \___|_|   \__||____/ \___|_| |_|
-         configuration drift detection
-```
+> Web-based configuration drift detection platform for server fleets
 
 ## Overview
 A web-based configuration drift detection platform for server fleets. Import server parameter data and baseline configurations from Excel, define per-Data-Center override rules, run automated scans, and visualize compliance across the fleet via dashboards with charts, leaderboards, and drill-down views.
@@ -20,22 +11,6 @@ A web-based configuration drift detection platform for server fleets. Import ser
 - Leaderboard page with KPIs, charts, filters, and drill-down
 - Server detail page with drift findings and scan history
 - Export to Excel (color-coded), CSV (Power BI-compatible), and HTML
-
-## Architecture
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ Excel import │────▶│  FastAPI app │────▶│  PostgreSQL  │
-│  (openpyxl)  │     │   (Jinja2)   │     │  (SQLAlchemy)│
-└──────────────┘     └──────┬───────┘     └──────────────┘
-                            │
-                            ▼
-                    ┌──────────────┐
-                    │  Dashboard   │
-                    │ (Bootstrap + │
-                    │  Chart.js)   │
-                    └──────────────┘
-```
 
 ## Tech Stack
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white) ![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=flat-square&logo=bootstrap&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
