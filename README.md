@@ -27,6 +27,15 @@ docker compose up
 
 Open http://localhost:8000
 
+### Database migrations
+
+SentriQ uses Alembic to track schema changes in version control. After updating `app/models.py`, generate a new migration and apply it:
+
+```bash
+alembic revision --autogenerate -m "describe the change"
+alembic upgrade head
+```
+
 ## Usage
 
 1. **Seed test data** — `python scripts/seed_data.py`
