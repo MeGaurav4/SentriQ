@@ -121,6 +121,7 @@ class DriftFinding(Base):
 
     __table_args__ = (
         Index("ix_report_server_severity", "report_id", "server_id", "severity"),
+        {"schema": "sq_schema"},
     )
 
 
