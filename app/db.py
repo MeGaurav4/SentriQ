@@ -9,6 +9,9 @@ DB_URL = os.getenv("DB_URL")
 if not DB_URL:
     raise RuntimeError("DB_URL environment variable is not set")
 
+# Schema migrations are managed via Alembic. Run `alembic upgrade head`
+# to apply migrations instead of calling Base.metadata.create_all().
+
 engine = create_engine(DB_URL, pool_pre_ping=True)
 
 
