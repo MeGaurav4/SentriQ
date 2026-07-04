@@ -621,13 +621,4 @@ async def leaderboard_page(request: Request):
             "os_list": os_list,
         },
     )
-    return templates.TemplateResponse(
-        request,
-        "leadership.html",
-        {
-            "request": request,
-            "dc_list": dc_list,
-            "type_list": type_list,
-            "os_list": os_list,
-        },
-    )
+
