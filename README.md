@@ -52,7 +52,6 @@ pytest tests/
 ```
 
 ## Roadmap
-- Alembic migrations setup
 - Authentication / user roles
 - Real-time drift alerts via webhook
 - Multi-tenant fleet isolation
